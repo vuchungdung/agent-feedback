@@ -1,0 +1,27 @@
+[
+	{
+		"id": "CUS001",
+		"name": "John Doe",
+		"email": "john@example.com",
+		"tier": "Gold",
+		"tenure": "3 years",
+		"past_tickets": 5,
+		"total_orders": 48,
+		"tags": [
+			"vip",
+			"high_value"
+		]
+	},
+	{
+		"id": "CUS002",
+		"name": "Alice",
+		"email": "alice@example.com",
+		"tier": "Silver",
+		"tenure": "6 months",
+		"past_tickets": 1,
+		"total_orders": 3,
+		"tags": [
+			"new_customer"
+		]
+	}
+]

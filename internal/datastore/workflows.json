@@ -1,0 +1,41 @@
+[
+    {
+        "id": "WF001",
+        "category": "billing",
+        "name": "Billing Complaint Workflow",
+        "description": "Standard workflow for billing complaints.",
+        "steps": [
+            "Verify payment information",
+            "Check duplicate transaction",
+            "Validate refund eligibility",
+            "Issue refund if applicable",
+            "Notify customer"
+        ],
+        "escalation": "Finance Team"
+    },
+    {
+        "id": "WF002",
+        "category": "bug_report",
+        "name": "Bug Report Workflow",
+        "description": "Standard workflow for product bugs.",
+        "steps": [
+            "Collect logs",
+            "Reproduce issue",
+            "Create engineering ticket",
+            "Notify customer"
+        ],
+        "escalation": "Engineering Team"
+    },
+    {
+        "id": "WF003",
+        "category": "feature_request",
+        "name": "Feature Request Workflow",
+        "description": "Workflow for handling feature requests.",
+        "steps": [
+            "Validate business value",
+            "Record customer use case",
+            "Submit to Product Team"
+        ],
+        "escalation": "Product Team"
+    }
+]

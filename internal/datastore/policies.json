@@ -1,0 +1,38 @@
+[
+    {
+        "id": "POL001",
+        "category": "billing",
+        "title": "Refund Policy",
+        "description": "Customers are eligible for a refund within 30 days of purchase.",
+        "rules": [
+            "Order must be paid",
+            "Refund request must be within 30 days",
+            "No duplicate refunds"
+        ],
+        "reference": "REFUND_POLICY_V1"
+    },
+    {
+        "id": "POL002",
+        "category": "bug_report",
+        "title": "Bug Handling Policy",
+        "description": "Critical production bugs must be escalated immediately.",
+        "rules": [
+            "Collect logs",
+            "Verify issue",
+            "Create engineering ticket"
+        ],
+        "reference": "BUG_POLICY_V1"
+    },
+    {
+        "id": "POL003",
+        "category": "feature_request",
+        "title": "Feature Request Policy",
+        "description": "Feature requests are forwarded to Product Management.",
+        "rules": [
+            "Collect business justification",
+            "Record customer impact",
+            "No implementation promise"
+        ],
+        "reference": "FEATURE_POLICY_V1"
+    }
+]
