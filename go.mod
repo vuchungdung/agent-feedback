@@ -2,7 +2,10 @@ module agent_feedback
 
 go 1.24.4
 
-require github.com/tmc/langchaingo v0.1.14
+require (
+	github.com/joho/godotenv v1.5.1
+	github.com/tmc/langchaingo v0.1.14
+)
 
 require (
 	github.com/dlclark/regexp2 v1.10.0 // indirect

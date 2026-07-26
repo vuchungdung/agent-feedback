@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"agent_feedback/helper"
+	"agent_feedback/internal/helper"
 	"agent_feedback/internal/models"
 	"context"
 	"encoding/json"
@@ -13,10 +13,7 @@ import (
 )
 
 type FeedbackProcessor interface {
-	Process(
-		ctx context.Context,
-		input models.FeedbackInput,
-	) (*models.FeedbackReport, error)
+	Process(ctx context.Context, input models.FeedbackInput) (*models.FeedbackReport, error)
 }
 
 type FeedbackHandler struct {

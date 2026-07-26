@@ -173,18 +173,13 @@ func normalizeReport(report *models.FeedbackReport) {
 			report.CustomerContext.Summary,
 		)
 
-	report.HumanReviewReason =
-		strings.TrimSpace(
-			report.HumanReviewReason,
-		)
-
 	actions := make(
 		[]string,
 		0,
-		len(report.SuggestedActions),
+		len(report.RecommendedNextSteps),
 	)
 
-	for _, action := range report.SuggestedActions {
+	for _, action := range report.RecommendedNextSteps {
 		action = strings.TrimSpace(action)
 
 		if action != "" {
@@ -192,7 +187,7 @@ func normalizeReport(report *models.FeedbackReport) {
 		}
 	}
 
-	report.SuggestedActions = actions
+	report.RecommendedNextSteps = actions
 
 	for index := range report.References {
 		report.References[index].Type =
@@ -254,7 +249,7 @@ func validateReport(report *models.FeedbackReport) error {
 		)
 	}
 
-	if len(report.SuggestedActions) == 0 {
+	if len(report.RecommendedNextSteps) == 0 {
 		return errors.New(
 			"at least one suggested action is required",
 		)
@@ -326,106 +321,142 @@ func validateReference(reference models.ReportReference) error {
 	return nil
 }
 
-func (r *JSONReporter) applyHumanReviewRules(report *models.FeedbackReport, classification models.Classification) {
-	reasons := make([]string, 0)
+func (r *JSONReporter) applyHumanReviewRules(
+	report *models.FeedbackReport,
+	classification models.Classification,
+) {
+	reasons := make([]models.ReviewReason, 0)
 
-	if classification.Confidence <
-		r.humanReviewThreshold {
-		reasons = append(
+	categoryUnknown :=
+		classification.Category == models.CategoryUnknown ||
+			report.Category == string(models.CategoryUnknown)
+
+	lowConfidence :=
+		classification.Confidence < r.humanReviewThreshold ||
+			report.Confidence < r.humanReviewThreshold
+
+	if categoryUnknown {
+		reasons = appendUnique(
 			reasons,
-			fmt.Sprintf(
-				"classification confidence is below %.2f",
-				r.humanReviewThreshold,
-			),
+			models.ReviewReasonAmbiguousCategory,
 		)
 	}
 
-	if strings.EqualFold(
-		string(classification.Category),
-		"unknown",
-	) {
-		reasons = append(
+	if lowConfidence {
+		reasons = appendUnique(
 			reasons,
-			"feedback category is ambiguous",
+			models.ReviewReasonLowConfidence,
 		)
 	}
 
-	if report.Confidence <
-		r.humanReviewThreshold {
-		reasons = append(
+	if categoryUnknown || lowConfidence || !report.CustomerContext.Available {
+		reasons = appendUnique(
 			reasons,
-			fmt.Sprintf(
-				"report confidence is below %.2f",
-				r.humanReviewThreshold,
-			),
-		)
-	}
-
-	classificationCategory := strings.ToLower(
-		strings.TrimSpace(
-			string(classification.Category),
-		),
-	)
-
-	if report.Category != classificationCategory {
-		reasons = append(
-			reasons,
-			fmt.Sprintf(
-				"report category %q differs from classifier category %q",
-				report.Category,
-				classificationCategory,
-			),
+			models.ReviewReasonMissingInformation,
 		)
 	}
 
 	if !report.CustomerContext.Available {
-		reasons = append(
+		reasons = appendUnique(
 			reasons,
-			"customer data is unavailable",
+			models.ReviewReasonCustomerNotFound,
 		)
 	}
 
-	if !hasReferenceType(
-		report.References,
-		"policy",
-	) {
-		reasons = append(
+	if requiresCategoryReferences(report) {
+		if !hasReferenceType(report.References, "policy") {
+			reasons = appendUnique(
+				reasons,
+				models.ReviewReasonMissingPolicy,
+			)
+		}
+
+		if !hasReferenceType(report.References, "workflow") {
+			reasons = appendUnique(
+				reasons,
+				models.ReviewReasonMissingWorkflow,
+			)
+		}
+	}
+
+	if containsRestrictedAction(report) {
+		reasons = appendUnique(
 			reasons,
-			"policy reference is unavailable",
+			models.ReviewReasonRestrictedAction,
 		)
 	}
 
-	if !hasReferenceType(
-		report.References,
-		"workflow",
-	) {
-		reasons = append(
-			reasons,
-			"workflow reference is unavailable",
-		)
+	report.HumanReviewReasons = reasons
+	report.HumanReviewRequired = len(reasons) > 0
+}
+
+func requiresCategoryReferences(
+	report *models.FeedbackReport,
+) bool {
+	if report.Category == string(models.CategoryUnknown) {
+		return false
 	}
 
-	if report.HumanReviewRequired &&
-		report.HumanReviewReason != "" {
-		reasons = append(
-			reasons,
-			report.HumanReviewReason,
-		)
+	if report.Confidence < 0.6 {
+		return false
 	}
 
-	reasons = uniqueStrings(reasons)
+	return true
+}
 
-	if len(reasons) == 0 {
-		report.HumanReviewRequired = false
-		report.HumanReviewReason = ""
-		return
+func containsRestrictedAction(report *models.FeedbackReport) bool {
+	for _, action := range report.ConditionalActions {
+		if isRestrictedText(action.Action) {
+			return true
+		}
 	}
 
-	report.HumanReviewRequired = true
-	report.HumanReviewReason = strings.Join(
-		reasons,
-		"; ",
+	for _, step := range report.RecommendedNextSteps {
+		if isRestrictedText(step) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isRestrictedText(value string) bool {
+	value = strings.ToLower(value)
+
+	return containsAny(
+		value,
+		"refund",
+		"issue credit",
+		"compensate",
+		"cancel subscription",
+		"close account",
+		"suspend account",
+		"change account balance",
+		"approve exception",
 	)
+}
+
+func containsAny(value string, candidates ...string) bool {
+	for _, candidate := range candidates {
+		if strings.Contains(value, candidate) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func appendUnique(
+	values []models.ReviewReason,
+	value models.ReviewReason,
+) []models.ReviewReason {
+	for _, existing := range values {
+		if existing == value {
+			return values
+		}
+	}
+
+	return append(values, value)
 }
 
 func hasReferenceType(references []models.ReportReference, referenceType string) bool {
@@ -436,26 +467,4 @@ func hasReferenceType(references []models.ReportReference, referenceType string)
 	}
 
 	return false
-}
-
-func uniqueStrings(values []string) []string {
-	seen := make(map[string]struct{})
-	result := make([]string, 0, len(values))
-
-	for _, value := range values {
-		value = strings.TrimSpace(value)
-
-		if value == "" {
-			continue
-		}
-
-		if _, exists := seen[value]; exists {
-			continue
-		}
-
-		seen[value] = struct{}{}
-		result = append(result, value)
-	}
-
-	return result
 }

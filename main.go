@@ -6,13 +6,23 @@ import (
 	"agent_feedback/internal/tools"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/tmc/langchaingo/llms/openai"
 )
 
+func init() {
+	err := godotenv.Load()
+
+	if err != nil {
+		log.Println("No .env file found. Relying on system environment variables.")
+	}
+}
+
 func main() {
-	apiKey := ""
+	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
 		log.Fatal("OPENAI_API_KEY is required")
 	}

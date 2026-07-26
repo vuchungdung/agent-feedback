@@ -9,46 +9,30 @@ func BuildHumanPrompt(
 	input models.FeedbackInput,
 	classification models.Classification,
 ) string {
-
 	return fmt.Sprintf(`
-Customer ID:
+Analyze the following customer submission.
+
+Feedback ID: %s
+Customer ID: %s
+Channel: %s
+
+Customer feedback:
+<customer_feedback>
 %s
+</customer_feedback>
 
-Email:
-%s
+Initial classification:
+- category: %s
+- urgency: %s
+- confidence: %.2f
+- reason: %s
 
-Channel:
-%s
-
-Timestamp:
-%s
-
-Feedback:
-
-%s
-
-Initial Classification
-
-Category:
-%s
-
-Urgency:
-%s
-
-Confidence:
-%.2f
-
-Reason:
-%s
-
-Please gather any additional information using available tools before generating the final report.
+Apply the system rules and return the required JSON report.
 `,
+		input.ID,
 		input.CustomerID,
-		input.Email,
 		input.Channel,
-		input.Timestamp,
 		input.Message,
-
 		classification.Category,
 		classification.Urgency,
 		classification.Confidence,

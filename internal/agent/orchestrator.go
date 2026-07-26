@@ -1,7 +1,7 @@
 package agent
 
 import (
-	"agent_feedback/helper"
+	"agent_feedback/internal/helper"
 	"agent_feedback/internal/models"
 	"agent_feedback/internal/prompts"
 	"agent_feedback/internal/tools"
@@ -69,7 +69,7 @@ func (a *Agent) Process(ctx context.Context, input models.FeedbackInput) (*model
 		classification.Confidence,
 	)
 
-	// Step 2: initialize conversation history.
+	// Step 1: initialize conversation history.
 	messages := []llms.MessageContent{
 		llms.TextParts(
 			llms.ChatMessageTypeSystem,
@@ -81,10 +81,10 @@ func (a *Agent) Process(ctx context.Context, input models.FeedbackInput) (*model
 		),
 	}
 
-	// Step 3: define the tools visible to the LLM.
+	// Step 2: define the tools visible to the LLM.
 	availableTools := a.toolDefinitions()
 
-	// Step 4: agentic tool-calling loop.
+	// Step 3: agentic tool-calling loop.
 	for iteration := 0; iteration < maxToolIterations; iteration++ {
 		log.Printf("[Agent] LLM iteration=%d", iteration+1)
 
